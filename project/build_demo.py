@@ -74,7 +74,10 @@ rep("    await downloadsApi.save({filename:'Ипотека расчёт и ко�
 # сброс: стереть и перезагрузить
 rep("  el('clearYes').onclick=()=>{","  el('clearYes').onclick=()=>{try{[KEY,XKEY,CKEY].forEach(k=>localStorage.removeItem(k))}catch(e){}location.reload();return;")
 open('ipoteka_demo_artifact.html','w',encoding='utf8').write(s)
-# версия для хостинга: полный документ
+# версия для хостинга: полный документ + приветственный экран с видео
+import importlib.util,os
+spec=importlib.util.spec_from_file_location('wp',os.path.join(os.path.dirname(os.path.abspath(__file__)),'welcome_patch.py'));wp=importlib.util.module_from_spec(spec);spec.loader.exec_module(wp)
+s=wp.apply(s)
 head='<!doctype html>\n<html lang="ru">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">\n<meta name="description" content="Демо ипотечного консультанта: расчёт досрочки, рефинансирования и вычета, разбор договора ИИ, сроки и PDF-отчёт.">\n<meta property="og:title" content="Ипотечный консультант (демо)">\n<meta property="og:description" content="Расчёт досрочки, рефинансирования и вычета, разбор договора ИИ, сроки и PDF-отчёт.">\n<meta name="theme-color" content="#1a1d2e">\n</head>\n<body>\n'
 open('ipoteka_demo_index.html','w',encoding='utf8').write(head+s+'\n</body>\n</html>\n')
 print('ok',s.count('—'))
