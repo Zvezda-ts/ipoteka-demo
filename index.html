@@ -1,0 +1,973 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Демо ипотечного консультанта: расчёт досрочки, рефинансирования и вычета, разбор договора ИИ, сроки и PDF-отчёт.">
+<meta property="og:title" content="Ипотечный консультант (демо)">
+<meta property="og:description" content="Расчёт досрочки, рефинансирования и вычета, разбор договора ИИ, сроки и PDF-отчёт.">
+<meta name="theme-color" content="#1a1d2e">
+</head>
+<body>
+<title>Ипотечный консультант (демо)</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&display=swap">
+<style>
+/* Layout: приложение. Слева меню-вкладки с бейджами, справа один раздел на экран. На телефоне меню внизу. Лавандовая тёмная гамма, одна тема намеренно. */
+:root{
+  --bg:#1a1d2e; --side:#20233a; --panel:#272a40; --panel2:#2f3350; --line:#3a3e5c;
+  --fg:#eef0f8; --muted:#a3a7c2;
+  --lav:#9b7fd8; --lav-deep:#7a5cc4; --lav-mid:#ab93e0; --lav-light:#cdbdf0; --on-light:#24223a;
+  --mint:#2fc6a8; --coral:#f07c84; --peach:#f5b97a; --pink:#e46fbf; --yellow:#f3e46b;
+  --base:var(--coral); --term:var(--mint); --pay:var(--lav);
+  --f:"Onest",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{min-height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--f);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 24px}
+.app{max-width:1320px;margin:0 auto;display:grid;grid-template-columns:250px minmax(0,1fr);gap:16px;align-items:start}
+/* боковое меню */
+.side{position:sticky;top:16px;background:var(--side);border-radius:14px;padding:18px 14px;display:flex;flex-direction:column;gap:16px;min-height:calc(100vh - 32px)}
+.brand{display:flex;align-items:center;gap:10px;padding:2px 6px}
+.brand .logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--lav-deep),var(--lav));display:grid;place-items:center;flex:none}
+.brand b{font-size:16px;line-height:1.15;display:block} .brand span{font-size:12px;color:var(--muted)}
+.nav{display:flex;flex-direction:column;gap:4px}
+.nav .grp{font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:10px 10px 4px}
+.tab{display:flex;align-items:center;gap:12px;width:100%;border:0;background:transparent;color:var(--fg);font:500 15px var(--f);padding:10px 12px;border-radius:10px;cursor:pointer;text-align:left;transition:background .15s}
+.tab svg{width:20px;height:20px;flex:none;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;opacity:.85}
+.tab:hover{background:var(--panel)} .tab:focus-visible{outline:2px solid var(--lav-light);outline-offset:1px}
+.tab[aria-selected="true"]{background:linear-gradient(135deg,var(--lav-deep),var(--lav));color:#fff;box-shadow:0 8px 22px -12px var(--lav)}
+.tab .lb{flex:1;min-width:0}
+.badge{font-size:11.5px;font-weight:700;border-radius:999px;padding:2px 8px;white-space:nowrap;background:var(--panel2);color:var(--lav-light)}
+.badge.hot{background:var(--coral);color:var(--on-light)} .badge.warm{background:var(--peach);color:var(--on-light)} .badge.ok{background:var(--mint);color:var(--on-light)}
+.tab[aria-selected="true"] .badge:not(.hot):not(.warm):not(.ok){background:rgba(255,255,255,.2);color:#fff}
+.side-foot{margin-top:auto;display:flex;flex-direction:column;gap:8px}
+/* основная область */
+.main{min-width:0;display:flex;flex-direction:column;gap:16px}
+.top{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;justify-content:space-between;padding:4px 4px 0}
+.crumbs{font-size:13px;color:var(--muted)} .crumbs b{color:var(--lav-light);font-weight:500}
+.top h1{font-size:clamp(24px,3vw,32px);font-weight:700;margin:2px 0 0;letter-spacing:-.01em}
+.top p{margin:2px 0 0;color:var(--muted);font-size:14.5px;max-width:70ch}
+.view[hidden]{display:none!important}
+.view{display:flex;flex-direction:column;gap:16px;animation:fade .2s ease}
+@keyframes fade{from{opacity:.4;transform:translateY(4px)}to{opacity:1;transform:none}}
+.panel{background:var(--panel);border-radius:12px;padding:18px}
+.panel h2{font-size:17px;font-weight:600;margin:0 0 2px}
+.sub{color:var(--muted);font-size:13.5px;margin:0 0 12px}
+/* KPI */
+.kpi4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (max-width:1100px){.kpi4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kt{border-radius:12px;padding:16px 18px;display:flex;gap:14px;align-items:center;min-width:0;background:var(--panel)}
+.kt .ic{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;flex:none;background:var(--panel2)}
+.kt .ic svg{width:22px;height:22px;stroke:var(--lav-light);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.kt .v{font-weight:800;font-size:clamp(18px,1.75vw,25px);line-height:1.15;font-variant-numeric:tabular-nums;white-space:nowrap}
+.kt>div:last-child{min-width:0}
+@media (max-width:1250px){.kt .ic{width:36px;height:36px}.kt{gap:10px;padding:14px}}
+@media (max-width:600px){.kt .ic{display:none}.kt .v{font-size:20px;white-space:normal}.kt .l{font-size:12.5px}}
+.kt .l{font-size:13px;color:var(--muted);line-height:1.3}
+.kt.hl{background:linear-gradient(135deg,var(--lav-deep),var(--lav))} .kt.hl .l{color:rgba(255,255,255,.85)} .kt.hl .ic{background:rgba(255,255,255,.18)} .kt.hl .ic svg{stroke:#fff}
+.kt.hl2{background:var(--lav-light);color:var(--on-light)} .kt.hl2 .l{color:#4b4670} .kt.hl2 .ic{background:rgba(36,34,58,.1)} .kt.hl2 .ic svg{stroke:var(--on-light)}
+/* мои данные */
+.params{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.pchip{background:var(--panel2);border-radius:8px;padding:6px 12px;font-size:13px;color:var(--muted);min-width:0}
+.pchip b{display:block;color:var(--yellow);font-size:16px;font-variant-numeric:tabular-nums}
+.params .btn{margin-left:auto}
+.edit{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 16px;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+@media (max-width:760px){.edit{grid-template-columns:minmax(0,1fr)}}
+.field{display:flex;flex-direction:column;gap:5px;min-width:0}
+.field label{font-size:13.5px;color:var(--muted);font-weight:500}
+.hint{font-size:12.5px;color:var(--muted)}
+.inp{display:flex;align-items:center;background:var(--panel2);border:1.5px solid transparent;border-radius:8px;transition:border-color .2s;min-width:0}
+.inp:focus-within{border-color:var(--lav)}
+.inp input{flex:1;min-width:0;width:100%;border:0;background:transparent;color:var(--yellow);font:700 19px var(--f);font-variant-numeric:tabular-nums;padding:8px 12px;outline:none}
+.inp.sm input{font-size:17px;padding:7px 10px}
+.inp span{color:var(--muted);font-size:13.5px;padding:0 10px;white-space:nowrap}
+.note{font-size:13px;color:var(--muted);background:var(--panel2);border-radius:8px;padding:9px 12px;border-left:3px solid var(--yellow)}
+/* обзор: график + доплата */
+.ov{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:16px;align-items:stretch}
+@media (max-width:1100px){.ov{grid-template-columns:minmax(0,1fr)}}
+.headrow{display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12.5px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px}
+svg text{fill:var(--muted);font:12px var(--f)}
+.extra-big{font-size:34px;font-weight:800;color:var(--yellow);font-variant-numeric:tabular-nums;line-height:1.1}
+input[type=range]{width:100%;accent-color:var(--lav);margin:10px 0}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{font:600 13px var(--f);border:0;background:var(--panel2);color:var(--lav-light);border-radius:6px;padding:6px 10px;cursor:pointer}
+.chips button:hover,.chips button:focus-visible{background:var(--lav-deep);color:#fff;outline:2px solid var(--lav-light);outline-offset:1px}
+.mini{display:flex;flex-direction:column;gap:6px;margin-top:14px}
+.mini div{display:flex;justify-content:space-between;gap:10px;font-size:14px;background:var(--panel2);border-radius:8px;padding:8px 12px}
+.mini b{font-variant-numeric:tabular-nums}
+/* сценарии */
+.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media (max-width:760px){.cards{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--panel);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;border-top:3px solid var(--c)}
+.card.best{box-shadow:0 0 0 2px var(--c),0 14px 34px -20px var(--c)}
+.card h3{margin:0 0 2px;font-size:15.5px;font-weight:600;display:flex;justify-content:space-between;gap:8px;align-items:center}
+.tag{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;background:var(--c);color:var(--on-light);border-radius:4px;padding:2px 7px;font-weight:700;white-space:nowrap}
+.row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;border-bottom:1px solid var(--line);padding:4px 0}
+.row:last-child{border-bottom:0}
+.row .k{font-size:13px;color:var(--muted)}
+.row .v{font-weight:700;font-size:16.5px;font-variant-numeric:tabular-nums;text-align:right}
+.row .v.save{color:var(--c);font-size:19px}
+/* таблицы, формы */
+.tscroll{overflow-x:auto}
+table{width:100%;border-collapse:separate;border-spacing:0 6px;min-width:520px;font-variant-numeric:tabular-nums}
+th,td{text-align:right;padding:9px 12px}
+td{background:var(--panel2);font-weight:600;font-size:15.5px}
+td:first-child{border-radius:6px 0 0 6px} td:last-child{border-radius:0 6px 6px 0}
+td.m{color:var(--mint)} td.l{color:var(--lav-light)}
+th{font-size:12px;color:var(--muted);font-weight:500}
+th:first-child,td:first-child{text-align:left}
+tr.cur td{background:var(--lav-deep);color:#fff} tr.cur td:first-child{color:var(--yellow)}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:16px;align-items:start}
+@media (max-width:860px){.two{grid-template-columns:minmax(0,1fr)}}
+.form{display:flex;flex-direction:column;gap:12px}
+.check{display:flex;gap:8px;align-items:flex-start;font-size:14px;cursor:pointer}
+.check input{accent-color:var(--lav);width:18px;height:18px;margin-top:2px;flex:none}
+.kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.kpi{background:var(--panel2);border-radius:8px;padding:10px 12px;min-width:0}
+.kpi .k{font-size:12.5px;color:var(--muted)} .kpi .v{font-weight:700;font-size:20px;font-variant-numeric:tabular-nums}
+.kpi.wide{grid-column:1/-1}
+.verdict{border-radius:8px;padding:12px 14px;font-weight:500;margin-top:8px}
+.verdict.good{background:rgba(47,198,168,.14);border-left:4px solid var(--mint)}
+.verdict.bad{background:rgba(240,124,132,.13);border-left:4px solid var(--coral)}
+.verdict.mid{background:rgba(245,185,122,.13);border-left:4px solid var(--peach)}
+.lumps{display:flex;flex-direction:column;gap:8px}
+.lump{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) 36px;gap:8px;align-items:center}
+.lump .when{font-size:12px;color:var(--muted);grid-column:1/-1;margin-top:-4px}
+.x{border:0;background:var(--panel2);color:var(--muted);border-radius:8px;height:38px;cursor:pointer;font-size:18px}
+.x:hover,.x:focus-visible{color:var(--coral);outline:2px solid var(--coral)}
+/* советы, условия */
+.advice{display:flex;flex-direction:column;gap:10px}
+.tip{background:var(--panel);border-radius:10px;padding:14px 18px;border-left:4px solid var(--c,var(--lav))}
+.tip b{display:block;margin-bottom:3px;font-size:16.5px;font-weight:600;color:var(--c,var(--fg))}
+.tip p{margin:0;opacity:.88;max-width:75ch}
+.tip.ok{--c:var(--mint)} .tip.warn{--c:var(--peach)} .tip.bad{--c:var(--coral)} .tip.info{--c:var(--lav-mid)} .tip.rent{--c:var(--pink);background:rgba(228,111,191,.10)}
+.terms{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media (max-width:860px){.terms{grid-template-columns:minmax(0,1fr)}}
+.term{background:var(--panel);border-radius:10px;padding:14px 16px;border-top:3px solid var(--c,var(--lav))}
+.term .k{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--c,var(--muted));font-weight:600}
+.term b{display:block;font-size:16px;margin:3px 0} .term p{margin:0;font-size:14.5px;opacity:.9}
+.empty{background:var(--panel);border-radius:12px;padding:28px 20px;text-align:center;display:flex;flex-direction:column;gap:10px;align-items:center}
+.empty b{font-size:17px} .empty p{margin:0;color:var(--muted);max-width:52ch}
+/* документы */
+.drop{border:2px dashed var(--lav);border-radius:12px;padding:26px 16px;text-align:center;cursor:pointer;background:var(--panel2);transition:background .2s,border-color .2s;display:flex;flex-direction:column;gap:6px;align-items:center}
+.drop:hover,.drop:focus-visible,.drop.over{background:#35395a;border-color:var(--yellow);outline:none}
+.drop b{font-size:17px} .drop span{color:var(--muted);font-size:13.5px}
+.btn{font:600 14.5px var(--f);border:0;border-radius:8px;padding:10px 16px;cursor:pointer;transition:filter .2s}
+.btn:hover{filter:brightness(1.1)} .btn:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
+.btn:disabled{opacity:.5;cursor:default;filter:none}
+.btn.main{background:var(--mint);color:var(--on-light)} .btn.sec{background:var(--lav-deep);color:#fff} .btn.ghost{background:var(--panel2);color:var(--fg)} .btn.danger{background:var(--coral);color:var(--on-light)}
+.btn.small{font-size:13.5px;padding:8px 12px}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+.status{font-size:14px;color:var(--muted);min-height:1.5em;margin:0}
+.status.err{color:var(--coral)}
+.facts{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px}
+.fact{background:var(--panel2);border-radius:8px;padding:8px 12px;min-width:0}
+.fact .k{font-size:12px;color:var(--muted)} .fact .v{font-weight:700;font-size:15.5px;overflow-wrap:anywhere}
+.fact.hl{box-shadow:inset 0 0 0 1.5px var(--yellow)}
+.deadlines,.flags{display:flex;flex-direction:column;gap:8px}
+.dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 16px;align-items:center;background:var(--panel);border-radius:10px;padding:12px 16px;border-left:4px solid var(--c)}
+.dl .cd{font-weight:800;font-size:26px;color:var(--c);font-variant-numeric:tabular-nums;line-height:1.1;text-align:center;min-width:96px}
+.dl .cd small{display:block;font-size:11.5px;font-weight:500;color:var(--muted)}
+.dl b{font-size:15.5px} .dl p{margin:2px 0 0;font-size:14px;opacity:.9}
+.dl.hot{--c:var(--coral)} .dl.warm{--c:var(--peach)} .dl.calm{--c:var(--mint)} .dl.past{--c:var(--muted)}
+.flag{background:var(--panel);border-radius:10px;padding:12px 16px;border-left:4px solid var(--peach)}
+.flag b{color:var(--peach)} .flag p{margin:3px 0 0;font-size:14.5px;opacity:.9}
+.sech{font-weight:600;font-size:15px;margin:4px 0 0;color:var(--lav-light)}
+.consult{background:var(--panel);border-radius:12px;padding:18px 20px;border-top:3px solid var(--mint)}
+.consult h3{font-size:16.5px;margin:14px 0 6px;color:var(--mint)} .consult h3:first-child{margin-top:0}
+.consult p{margin:0 0 8px;max-width:78ch} .consult ul{margin:0 0 8px;padding-left:20px} .consult li{margin:3px 0}
+.consult strong{color:var(--yellow);font-weight:600}
+.privacy{font-size:12.5px;color:var(--muted)}
+.ai-bar{background:linear-gradient(135deg,rgba(122,92,196,.35),rgba(155,127,216,.15));border-radius:12px;padding:16px 18px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+.ai-bar p{margin:0;max-width:60ch;font-size:14.5px}
+.clearbox{display:flex;flex-direction:column;gap:8px}
+.clearbox p{margin:0;font-size:12.5px;color:var(--muted)}
+footer{color:var(--muted);font-size:12px;max-width:90ch;padding:0 4px}
+.dots::after{content:"";animation:dots 1.2s steps(4) infinite}
+@keyframes dots{0%{content:""}25%{content:"."}50%{content:".."}75%{content:"..."}}
+/* телефон: меню внизу */
+@media (max-width:900px){
+  body{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+  .app{grid-template-columns:minmax(0,1fr)}
+  .side{position:fixed;left:0;right:0;bottom:0;top:auto;min-height:0;border-radius:14px 14px 0 0;padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px));z-index:20;box-shadow:0 -10px 30px rgba(0,0,0,.35)}
+  .brand,.side-foot,.nav .grp{display:none}
+  .nav{flex-direction:row;overflow-x:auto;gap:2px;scrollbar-width:none}
+  .tab{flex-direction:column;gap:3px;padding:7px 10px;min-width:70px;font-size:11.5px;position:relative;align-items:center;text-align:center}
+  .tab .lb{flex:none}
+  .tab .badge{position:absolute;top:2px;right:4px;font-size:9.5px;padding:1px 5px}
+  .mobile-only{display:flex!important}
+}
+.mobile-only{display:none!important}
+.demo-pill{background:var(--yellow);color:var(--on-light);font-weight:600;font-size:12.5px;border-radius:999px;padding:4px 12px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+/* отчёт для PDF */
+#report{position:fixed;left:-12000px;top:0;width:794px;background:#fff;color:#1d1f2e;font-family:var(--f);font-size:13px;line-height:1.45}
+#report .sec{padding:18px 40px}
+#report h1{font-size:24px;margin:0 0 4px;color:#4b3596} #report h2{font-size:16px;margin:0 0 8px;color:#4b3596;border-bottom:2px solid #e3dbf6;padding-bottom:4px}
+#report h3{font-size:14px;margin:10px 0 4px;color:#1b8f78}
+#report table{min-width:0;border-spacing:0;border-collapse:collapse;width:100%}
+#report td,#report th{background:none;border-bottom:1px solid #e6e6ef;padding:6px 8px;font-size:12.5px;color:#1d1f2e;font-weight:500}
+#report th{color:#6a6d86;font-weight:600}
+#report .muted{color:#6a6d86} #report p{margin:0 0 6px} #report ul{margin:0 0 6px;padding-left:18px}
+#report .big{font-size:26px;font-weight:800;color:#1b8f78}
+#report .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+#report .cell{background:#f4f1fb;border-radius:4px;padding:8px 10px} #report .cell b{display:block;font-size:16px}
+#report .flagr{border-left:3px solid #e39a4a;padding:4px 10px;margin-bottom:6px;background:#fdf5ec}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-home" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+  <symbol id="i-doc" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-bulb" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M4 18l6-6 4 4 6-8"/><path d="M15 8h5v5"/></symbol>
+  <symbol id="i-swap" viewBox="0 0 24 24"><path d="M4 8h13l-3-3M20 16H7l3 3"/></symbol>
+  <symbol id="i-tax" viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/></symbol>
+  <symbol id="i-wallet" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18M16 15h2"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+  <symbol id="i-pig" viewBox="0 0 24 24"><path d="M5 11a6 5 0 0 1 11-2h2l1 3-2 1v3h-2v2h-2v-2H9v2H7v-3a5 5 0 0 1-2-4z"/><path d="M3 10c1 0 2 .5 2 1.5"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 20h18M6 16v-4M11 16V8M16 16v-6M20 16V5"/></symbol>
+</svg>
+
+<div class="app">
+  <aside class="side" aria-label="Разделы">
+    <div class="brand"><div class="logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></div>
+      <div><b>Ипотечный консультант</b><span>демо-версия</span></div></div>
+    <nav class="nav" role="tablist" aria-label="Разделы дашборда">
+      <div class="grp">Расчёт</div>
+      <button class="tab" role="tab" data-tab="overview" aria-selected="true"><svg><use href="#i-home"/></svg><span class="lb">Обзор</span><span class="badge" id="b-overview" hidden></span></button>
+      <button class="tab" role="tab" data-tab="early" aria-selected="false"><svg><use href="#i-down"/></svg><span class="lb">Досрочки</span><span class="badge" id="b-early" hidden></span></button>
+      <button class="tab" role="tab" data-tab="refi" aria-selected="false"><svg><use href="#i-swap"/></svg><span class="lb">Рефинанс.</span><span class="badge" id="b-refi" hidden></span></button>
+      <button class="tab" role="tab" data-tab="tax" aria-selected="false"><svg><use href="#i-tax"/></svg><span class="lb">Вычет</span><span class="badge" id="b-tax" hidden></span></button>
+      <div class="grp">Разбор</div>
+      <button class="tab" role="tab" data-tab="docs" aria-selected="false"><svg><use href="#i-doc"/></svg><span class="lb">Документы</span><span class="badge" id="b-docs" hidden></span></button>
+      <button class="tab" role="tab" data-tab="terms" aria-selected="false"><svg><use href="#i-clock"/></svg><span class="lb">Сроки и условия</span><span class="badge" id="b-terms" hidden></span></button>
+      <button class="tab" role="tab" data-tab="tips" aria-selected="false"><svg><use href="#i-bulb"/></svg><span class="lb">Советы</span><span class="badge" id="b-tips" hidden></span></button>
+    </nav>
+    <div class="side-foot">
+      <div class="clearbox">
+        <button class="btn ghost small" id="clearBtn" type="button">Сбросить к примеру</button>
+        <div id="clearConfirm" hidden>
+          <p style="margin-bottom:8px">Ваши изменения сотрутся, вернутся цифры примера.</p>
+          <div class="actions"><button class="btn danger small" id="clearYes" type="button">Да, сбросить</button><button class="btn ghost small" id="clearNo" type="button">Отмена</button></div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="top">
+      <div class="demo-pill">Демо: все данные и договор выдуманы</div>
+      <div style="flex-basis:100%;height:0"></div>
+      <div><div class="crumbs">Ипотека / <b id="crumb">Обзор</b></div><h1 id="vTitle">Обзор</h1><p id="vSub"></p></div>
+    </div>
+
+    <!-- ОБЗОР -->
+    <section class="view" id="v-overview" role="tabpanel">
+      <div class="kpi4" aria-live="polite">
+        <div class="kt"><div class="ic"><svg><use href="#i-wallet"/></svg></div><div><div class="v" id="heroPay">0 ₽</div><div class="l">Платёж по графику</div></div></div>
+        <div class="kt"><div class="ic"><svg><use href="#i-chart"/></svg></div><div><div class="v" id="heroOver">0 ₽</div><div class="l">Переплата без доплат</div></div></div>
+        <div class="kt hl"><div class="ic"><svg><use href="#i-pig"/></svg></div><div><div class="v" id="heroSave">0 ₽</div><div class="l" id="heroLbl">Экономия, если сокращать срок</div></div></div>
+        <div class="kt hl2"><div class="ic"><svg><use href="#i-calendar"/></svg></div><div><div class="v" id="heroTime">0</div><div class="l">Закроется раньше на</div></div></div>
+      </div>
+
+      <div class="panel">
+        <div class="params">
+          <div class="pchip">Остаток<b id="pDebt"></b></div><div class="pchip">Ставка<b id="pRate"></b></div><div class="pchip">Осталось<b id="pMonths"></b></div>
+          <div class="pchip">Доход<b id="pIncome"></b></div><div class="pchip">Страховка/год<b id="pIns"></b></div>
+          <button class="btn sec small" id="editBtn" type="button" aria-expanded="false">Изменить данные</button>
+        </div>
+        <div class="edit" id="editBox" hidden>
+          <div class="field"><label for="debt">Остаток долга</label><div class="inp"><input id="debt" inputmode="decimal" autocomplete="off"><span>₽</span></div><div class="hint">В приложении банка: «остаток основного долга»</div></div>
+          <div class="field"><label for="rate">Ставка</label><div class="inp"><input id="rate" inputmode="decimal" autocomplete="off"><span>% годовых</span></div></div>
+          <div class="field"><label for="months">Осталось платить</label><div class="inp"><input id="months" inputmode="numeric" autocomplete="off"><span>мес.</span></div><div class="hint" id="monthsHint"></div></div>
+          <div class="field"><label for="income">Доход семьи в месяц</label><div class="inp"><input id="income" inputmode="decimal" autocomplete="off"><span>₽</span></div></div>
+          <div class="field"><label for="ins">Страховка в год</label><div class="inp"><input id="ins" inputmode="decimal" autocomplete="off"><span>₽</span></div><div class="hint">Дешевеет вместе с долгом, так и считаем</div></div>
+          <div class="field" style="justify-content:flex-end"><button class="btn ghost" id="docsJump" type="button">Или загрузить договор</button></div>
+        </div>
+        <div class="note" id="sampleNote" style="margin-top:12px">Это демо: цифры взяты из выдуманного договора. Нажмите «Изменить данные» и подвигайте их, всё пересчитается сразу.</div>
+      </div>
+
+      <div class="ov">
+        <div class="panel">
+          <div class="headrow"><h2>Как тает долг</h2>
+            <div class="legend"><span><i style="background:var(--base)"></i>Без доплат</span><span><i style="background:var(--term)"></i>Сокращаю срок</span><span><i style="background:var(--pay)"></i>Сокращаю платёж</span></div></div>
+          <div id="chart" style="margin-top:8px"></div>
+        </div>
+        <div class="panel">
+          <h2>Доплата каждый месяц</h2>
+          <div class="field" style="margin-top:8px"><label for="extra" class="sr">Сумма доплаты</label><div class="inp"><input id="extra" inputmode="decimal" autocomplete="off"><span>₽</span></div></div>
+          <input type="range" id="extraRange" min="0" max="50000" step="500" aria-label="Доплата ползунком">
+          <div class="chips" id="chips"></div>
+          <div class="mini" id="mini"></div>
+        </div>
+      </div>
+
+      <div class="cards" id="cards"></div>
+    </section>
+
+    <!-- ДОСРОЧКИ -->
+    <section class="view" id="v-early" role="tabpanel" hidden>
+      <div class="two">
+        <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+        <div class="panel">
+          <h2>Разовые досрочки</h2>
+          <p class="sub">Премия, маткапитал, возврат вычета. Сумма и через сколько месяцев внесёте. Учитываются во всех расчётах.</p>
+          <div class="lumps" id="lumps"></div>
+          <div class="actions" style="margin-top:10px"><button class="btn ghost small" id="addLump" type="button">+ Добавить разовую досрочку</button></div>
+        </div>
+        <div class="panel" style="border-top:3px solid var(--mint)">
+          <h2>Доплата каждый месяц</h2>
+          <p class="sub">Тот же ползунок, что на Обзоре. Двигайте и смотрите, как меняется итог вместе с разовыми досрочками.</p>
+          <div class="extra-big" id="extra2Val">0 ₽</div>
+          <input type="range" id="extraRange2" min="0" max="50000" step="500" aria-label="Доплата каждый месяц">
+          <div class="kpis" id="effect"></div>
+        </div>
+        </div>
+        <div class="panel">
+          <h2>А если доплачивать больше</h2>
+          <p class="sub">Экономия на процентах и страховке при разных ежемесячных доплатах</p>
+          <div class="tscroll"><table>
+            <thead><tr><th>Доплата в месяц</th><th>Срок: экономия</th><th>Раньше на</th><th>Платёж: экономия</th></tr></thead>
+            <tbody id="tbody"></tbody>
+          </table></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- РЕФИНАНСИРОВАНИЕ -->
+    <section class="view" id="v-refi" role="tabpanel" hidden>
+      <div class="panel">
+        <div class="two">
+          <div class="form">
+            <div class="field"><label for="rfRate">Новая ставка</label><div class="inp sm"><input id="rfRate" inputmode="decimal" autocomplete="off"><span>%</span></div></div>
+            <div class="field"><label for="rfCost">Расходы на переоформление</label><div class="inp sm"><input id="rfCost" inputmode="decimal" autocomplete="off"><span>₽</span></div>
+              <div class="hint">Оценка квартиры, новая страховка, госпошлина, нотариус. Обычно 15-40 тысяч.</div></div>
+          </div>
+          <div><div class="kpis" id="rfKpis"></div><div id="rfVerdict"></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ВЫЧЕТ -->
+    <section class="view" id="v-tax" role="tabpanel" hidden>
+      <div class="panel">
+        <div class="two">
+          <div class="form">
+            <div class="field"><label for="txPrice">Стоимость жилья</label><div class="inp sm"><input id="txPrice" inputmode="decimal" autocomplete="off"><span>₽</span></div></div>
+            <div class="field"><label for="txSalary">Ваша зарплата до вычета налога</label><div class="inp sm"><input id="txSalary" inputmode="decimal" autocomplete="off"><span>₽/мес</span></div>
+              <div class="hint">Вычет возвращает уплаченный НДФЛ, поэтому в год можно получить не больше налога с зарплаты.</div></div>
+            <div class="field"><label for="txPaid">Проценты, уже уплаченные банку</label><div class="inp sm"><input id="txPaid" inputmode="decimal" autocomplete="off"><span>₽</span></div>
+              <div class="hint">Есть в справке банка об уплаченных процентах. Если не знаете, оставьте 0.</div></div>
+            <label class="check"><input type="checkbox" id="txUsed"> Вычет за покупку уже получали раньше</label>
+            <label class="check"><input type="checkbox" id="txOld"> Кредит взят до 2014 года (лимита по процентам нет)</label>
+          </div>
+          <div>
+            <div class="kpis" id="txKpis"></div>
+            <div class="actions" style="margin-top:10px"><button class="btn sec small" id="txToLump" type="button">Вложить возврат в досрочку</button></div>
+            <p class="hint" style="margin:10px 0 0">Лимиты: 2 млн за покупку и 3 млн процентов, возврат 13%, при доходе больше 2,4 млн в год 15% и выше. Супруги получают вычет каждый, если жильё в общей собственности. Перед подачей сверьтесь с ФНС.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ДОКУМЕНТЫ -->
+    <section class="view" id="v-docs" role="tabpanel" hidden>
+      <div class="panel" id="contract">
+        <div id="cUnavailable" class="note" hidden>Разбор документов работает, когда страница открыта в Claude под вашим аккаунтом. Калькулятор работает и без этого.</div>
+        <div id="cUpload">
+          <label class="drop" id="drop" tabindex="0" for="file">
+            <b>Перетащите договор и график сюда или нажмите</b>
+            <span>PDF, Word (.docx) или фото страниц. Можно несколько файлов сразу, до 30 фото</span>
+            <span style="font-size:12.5px">Страницы с паспортными данными можно не загружать</span>
+          </label>
+          <input type="file" id="file" accept=".pdf,.docx,image/jpeg,image/png,image/webp" multiple hidden>
+        </div>
+        <p class="status" id="cStatus" aria-live="polite" style="margin-top:10px"></p>
+        <div id="cResult" hidden>
+          <div class="facts" id="facts"></div>
+          <div class="actions" style="margin-top:14px">
+            <button class="btn sec" id="applyBtn" type="button">Подставить в калькулятор</button>
+            <button class="btn ghost" id="toTerms" type="button">Смотреть сроки и условия</button>
+            <button class="btn ghost" id="resetBtn" type="button">Загрузить другие документы</button>
+          </div>
+        </div>
+        <p class="privacy" style="margin:12px 0 0">Файлы читаются прямо в браузере и никуда не сохраняются. На разбор уходит только текст документов, в ваш аккаунт Claude.</p>
+      </div>
+    </section>
+
+    <!-- СРОКИ И УСЛОВИЯ -->
+    <section class="view" id="v-terms" role="tabpanel" hidden>
+      <div id="termsEmpty" class="empty"><b>Здесь появятся сроки и особые условия</b><p>Загрузите договор, и ИИ найдёт сроки обязательств, условия роста ставки, ограничения на аренду и рискованные пункты.</p><button class="btn sec" type="button" data-go="docs">Загрузить договор</button></div>
+      <div id="termsFull" hidden>
+        <div class="deadlines" id="deadlines"></div>
+        <div class="sech" style="margin-top:16px">Особые условия</div>
+        <div class="terms" id="termsGrid" style="margin-top:8px"></div>
+        <div class="flags" id="flags" style="margin-top:16px"></div>
+      </div>
+    </section>
+
+    <!-- СОВЕТЫ -->
+    <section class="view" id="v-tips" role="tabpanel" hidden>
+      <div class="ai-bar" id="aiBar">
+        <p><b>Персональная консультация.</b> ИИ разберёт ваши цифры и договор и напишет, что делать именно вам.</p>
+        <div class="actions"><button class="btn main" id="consultBtn" type="button">Получить консультацию</button><button class="btn ghost" id="stopBtn" type="button" hidden>Остановить</button></div>
+      </div>
+      <div class="consult" id="consult" hidden></div>
+      <div id="tips" class="advice"></div>
+      <div class="ai-bar" id="reportBar">
+        <p>Сохраните расчёт, разбор договора и консультацию одним файлом, чтобы показать семье или в банке.</p>
+        <button class="btn sec" id="pdfBtn" type="button">Скачать отчёт PDF</button>
+        <p class="status" id="pdfStatus" style="flex-basis:100%"></p>
+      </div>
+    </section>
+
+    <footer>Расчёт для аннуитетного платежа. Банк может округлять суммы и считать дни иначе, поэтому разница с его графиком в пару сотен рублей нормальна. Расчёт носит информационный характер и не является финансовой рекомендацией.</footer>
+  </main>
+</div>
+
+<div id="report" aria-hidden="true"></div>
+
+<script>
+const DEFAULTS={debt:5945000,rate:9.6,months:257,income:210000,extra:5000,ins:24000};
+const DEMO_CONTRACT={"loan_kind": "Ипотека на квартиру в новостройке", "bank": "АО «Пример Банк» (выдуманный)", "contract_date": "2023-03-15", "loan_amount": 6200000, "property_price": 7800000, "rate": 9.6, "term_months": 300, "payment_type": "аннуитетный", "monthly_payment": 54601, "program": null, "insurance": "Жизнь и здоровье заёмщика, после регистрации собственности ещё и сама квартира.", "insurance_cost_year": 24000, "rate_if_no_insurance": "+1 п.п. при отказе от страхования жизни", "rate_increase_pp": 1, "rate_increase_condition": "не продлить страхование жизни и здоровья", "early_repayment": "В любой день без комиссии, заявление в приложении за 1 рабочий день, минимальной суммы нет.", "rent_restrictions": "Пункт 4.1.9: сдавать квартиру в аренду и регистрировать в ней третьих лиц можно только с письменного согласия банка.", "rate_change": "Только при отказе от страхования жизни или если не оформить собственность в срок.", "penalties": "0,06% от суммы просрочки за каждый день.", "schedule_balance": 5945000, "schedule_balance_date": "2026-10-15", "schedule_months_left": 257, "tranches": null, "property_notes": "Дом сдан в июле 2026, акт приёма-передачи подписан, собственность ещё не оформлена.", "deadlines": [{"date": "2027-01-31", "what": "Оформить право собственности на квартиру и передать банку закладную", "penalty": "ставка вырастет на 2 п.п. до предоставления документов"}, {"date": "2027-03-15", "what": "Продлить полис страхования жизни и квартиры на следующий год", "penalty": "ставка вырастет на 1 п.п."}], "red_flags": [{"title": "Ставка растёт сразу на 2 пункта", "detail": "Если не оформить собственность к 31.01.2027, ставка поднимется до 11,6% (п. 4.3.2). Это плюс 8 тысяч к платежу каждый месяц."}, {"title": "Страховку нужно продлевать каждый год", "detail": "Банк повышает ставку уже со следующего платежа после окончания полиса (п. 4.1.7). Полис стоит продлевать заранее."}, {"title": "Аренда только с согласия банка", "detail": "Без письменного согласия банк вправе потребовать досрочного возврата всего кредита (п. 4.4.1)."}]};
+const DEMO_CONSULT="### Главное про вашу ипотеку\nОстаток 5 945 000 ₽ под 9,6%, платить ещё 21 год и 5 месяцев. Платёж 54 605 ₽, это 26% дохода семьи, нагрузка комфортная. Если ничего не менять, банк получит ещё около **8,1 млн ₽** процентов, и это без страховки.\n\n### Что выгоднее именно вам\nДоплата 5 000 ₽ в месяц с сокращением срока экономит около **2,1 млн ₽** процентов, ипотека закроется на 4 года 8 месяцев раньше. Сокращать платёж в вашем случае смысла мало: нагрузка и так невысокая, а экономия выйдет в разы меньше. Сейчас, в первые годы, каждый рубль доплаты работает сильнее всего.\n\n### На что смотреть в договоре\n- **Срок 31 января 2027.** До этой даты нужно оформить собственность и передать банку закладную. Опоздаете, ставка вырастет на 2 п.п., платёж станет около 62 765 ₽, это плюс 8 160 ₽ каждый месяц. Запишитесь в МФЦ уже в ноябре: регистрация и закладная занимают 3-5 недель.\n- **Страховка жизни.** Без неё ставка +1 п.п., платёж вырос бы на 4 026 ₽, около 48 тысяч в год. Полис стоит 24 тысячи, держать его выгодно. Перед продлением в марте сравните цены у других аккредитованных страховых.\n- **Досрочка** без комиссии и без минимальной суммы, заявление в приложении за день. Гасить можно хоть по 5 000.\n\n### Сдача в аренду\nПункт 4.1.9: сдавать квартиру и прописывать жильцов можно только с письменного согласия банка. Если планируете сдавать, подайте заявление заранее и получите ответ на бумаге. Без согласия банк вправе потребовать вернуть весь кредит.\n\n### Рефинансирование и вычет\nРефинансировать есть смысл, если найдёте ставку 8% и ниже: разница меньше 1,5 п.п. съестся расходами на переоформление. Вычет: квартира стоила 7,8 млн, за покупку вернётся 260 тысяч, за проценты до 390 тысяч. Право на вычет появилось с подписания акта в июле 2026, так что за 2026 год можно подать уже в начале 2027.\n\n### План на ближайший месяц\n- Записаться в МФЦ на регистрацию собственности и сразу заказать закладную в банке.\n- Включить доплату 5 000 ₽ в месяц с сокращением срока.\n- В январе подать 3-НДФЛ за 2026 год и направить возврат на досрочку.\n- Поставить напоминание на март: сравнить цены страховки перед продлением.";
+const KEY='demo-ipoteka-v1',XKEY='demo-ipoteka-extra-v2',CKEY='demo-ipoteka-contract-v1';
+const ids=['debt','rate','months','income','extra','ins'];
+const el=id=>document.getElementById(id);
+const nf=new Intl.NumberFormat('ru-RU',{maximumFractionDigits:0});
+const rub=v=>nf.format(Math.round(v))+' ₽';
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function parse(s){s=String(s).replace(/\s/g,'').replace(',','.');const v=parseFloat(s);return isFinite(v)?v:0}
+function plural(n,a,b,c){n=Math.abs(n)%100;const m=n%10;if(n>10&&n<20)return c;if(m>1&&m<5)return b;if(m===1)return a;return c}
+function dur(m){m=Math.round(m);const y=Math.floor(m/12),r=m%12;const p=[];
+  if(y)p.push(y+' '+plural(y,'год','года','лет'));if(r)p.push(r+' мес.');return p.length?p.join(' '):'0 мес.'}
+function monthName(k){const d=new Date();d.setDate(1);d.setMonth(d.getMonth()+k);return d.toLocaleDateString('ru-RU',{month:'long',year:'numeric'})}
+
+function annuity(S,r,n){if(n<=0)return S;if(r===0)return S/n;return S*r/(1-Math.pow(1+r,-n))}
+
+// mode: none | term | pay. lumps: [{m: через сколько мес., a: сумма}]. insYear: страховка в год при текущем долге
+function simulate(S,rateYear,n,extra,mode,lumps,insYear){
+  const r=rateYear/1200;const P0=annuity(S,r,n);const lm={};
+  if(mode!=='none')(lumps||[]).forEach(l=>{if(l.a>0&&l.m>=1)lm[l.m]=(lm[l.m]||0)+l.a});
+  let bal=S,interest=0,ins=0,months=0,pay=P0,lastPay=P0,paidExtra=0;const bals=[S];
+  for(let k=0;k<n&&bal>0.5;k++){
+    if(insYear>0&&k%12===0)ins+=insYear*bal/S;
+    const int=bal*r;
+    if(mode==='pay')pay=annuity(bal,r,n-k);
+    const base=Math.min(pay,bal+int);
+    let add=mode==='none'?0:Math.min(extra,bal+int-base);
+    interest+=int;bal=bal+int-base-add;paidExtra+=add;months++;
+    const L=lm[k+1];if(L&&bal>0){const a=Math.min(L,bal);bal-=a;paidExtra+=a}
+    bals.push(Math.max(bal,0));lastPay=base;
+  }
+  return {P0,interest,ins,total:interest+ins,months,bals,lastPay,paidExtra};
+}
+
+/* ===== состояние ===== */
+let lumps=[],extraState={rfRate:'',rfCost:'30000',txPrice:'7 800 000',txSalary:'120 000',txPaid:'0',txUsed:false,txOld:false};
+function read(){const o={};ids.forEach(i=>o[i]=parse(el(i).value));
+  o.months=Math.max(1,Math.min(600,Math.round(o.months)));o.extra=Math.max(0,o.extra);return o}
+function fmtInput(id){const v=parse(el(id).value);el(id).value=(id==='rate'||id==='rfRate')?String(v).replace('.',','):nf.format(v)}
+function store(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+function fetchStore(k){try{const s=localStorage.getItem(k);return s?JSON.parse(s):null}catch(e){return null}}
+
+function card(title,color,tag,rows,best){
+  return `<article class="card${best?' best':''}" style="--c:${color}">
+    <h3>${title}${tag?`<span class="tag">${tag}</span>`:''}</h3>
+    ${rows.filter(Boolean).map(([k,v,cls])=>`<div class="row"><span class="k">${k}</span><span class="v ${cls||''}">${v}</span></div>`).join('')}
+  </article>`}
+
+function drawChart(S,n,series){
+  const W=640,H=260,L=64,R=12,T=10,B=28,w=W-L-R,h=H-T-B;
+  const x=m=>L+m/n*w, y=v=>T+h-v/S*h;
+  let g='';
+  [0,.25,.5,.75,1].forEach(f=>{const yy=y(S*f);
+    g+=`<line x1="${L}" x2="${W-R}" y1="${yy}" y2="${yy}" stroke="var(--line)" stroke-width="1"/>`;
+    g+=`<text x="${L-8}" y="${yy+4}" text-anchor="end">${f===0?'0':nf.format(Math.round(S*f/1e6*10)/10)+' млн'}</text>`});
+  const yrs=Math.ceil(n/12);const step=yrs>20?5:yrs>8?2:1;
+  for(let yr=0;yr<=yrs;yr+=step){const m=Math.min(yr*12,n);
+    g+=`<text x="${x(m)}" y="${H-8}" text-anchor="middle">${yr===0?'сейчас':yr+' '+plural(yr,'год','года','лет')}</text>`}
+  series.forEach(([bals,color,fill])=>{
+    const pts=bals.map((v,i)=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+    if(fill)g+=`<polygon points="${x(0)},${y(0)} ${pts} ${x(bals.length-1)},${y(0)}" fill="${color}" fill-opacity=".14"/>`;
+    g+=`<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round"/>`;
+    g+=`<circle cx="${x(bals.length-1)}" cy="${y(0)}" r="4.5" fill="${color}"/>`;
+  });
+  el('chart').innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="График остатка долга">${g}</svg>`;
+}
+
+/* ===== разовые досрочки ===== */
+function renderLumps(){
+  el('lumps').innerHTML=lumps.map((l,i)=>`<div class="lump">
+    <div class="inp sm"><input id="lumpA${i}" data-i="${i}" data-k="a" inputmode="decimal" value="${nf.format(l.a)}" aria-label="Сумма досрочки"><span>₽</span></div>
+    <div class="inp sm"><input id="lumpM${i}" data-i="${i}" data-k="m" inputmode="numeric" value="${l.m}" aria-label="Через сколько месяцев"><span>мес.</span></div>
+    <button class="x" type="button" data-del="${i}" aria-label="Удалить">×</button>
+    <div class="when" id="lumpW${i}">${l.note?esc(l.note)+', ':''}${monthName(l.m)}</div></div>`).join('');
+}
+el('lumps').addEventListener('input',e=>{const t=e.target;if(t.dataset.i==null)return;const l=lumps[+t.dataset.i];
+  l[t.dataset.k]=t.dataset.k==='m'?Math.max(1,Math.round(parse(t.value))):parse(t.value);
+  el('lumpW'+t.dataset.i).textContent=(l.note?l.note+', ':'')+monthName(l.m);render()});
+el('lumps').addEventListener('focusout',e=>{const t=e.target;if(t.dataset.k==='a')t.value=nf.format(parse(t.value))});
+el('lumps').addEventListener('click',e=>{const b=e.target.closest('[data-del]');if(!b)return;lumps.splice(+b.dataset.del,1);renderLumps();render()});
+el('addLump').onclick=()=>{lumps.push({a:100000,m:6});renderLumps();render();const i=lumps.length-1;el('lumpA'+i).focus()};
+
+/* ===== главный расчёт ===== */
+function render(){
+  const o=read();store(KEY,o);
+  ['rfRate','rfCost','txPrice','txSalary','txPaid'].forEach(i=>extraState[i]=el(i).value);
+  extraState.txUsed=el('txUsed').checked;extraState.txOld=el('txOld').checked;extraState.lumps=lumps;store(XKEY,extraState);
+  el('monthsHint').textContent='Это '+dur(o.months);
+  el('extraRange').value=Math.min(o.extra,50000);el('extraRange2').value=Math.min(o.extra,50000);el('extra2Val').textContent=rub(o.extra)+' в месяц';
+  el('sampleNote').hidden=!ids.every(i=>o[i]===DEFAULTS[i]);
+  if(o.debt<=0){el('cards').innerHTML='';return}
+
+  const A=simulate(o.debt,o.rate,o.months,0,'none',[],o.ins);
+  const B=simulate(o.debt,o.rate,o.months,o.extra,'term',lumps,o.ins);
+  const C=simulate(o.debt,o.rate,o.months,o.extra,'pay',lumps,o.ins);
+  const saveB=A.total-B.total,saveC=A.total-C.total,fasterB=A.months-B.months;
+  const has=o.extra>0||lumps.some(l=>l.a>0);
+  window.calc={o,A,B,C,saveB,saveC,fasterB,lumps:lumps.slice()};
+
+  el('heroSave').textContent=rub(saveB);
+  el('heroTime').textContent=has?dur(fasterB):'0 мес.';
+  el('heroPay').textContent=rub(A.P0);el('heroOver').textContent=rub(A.total);
+  el('pDebt').textContent=rub(o.debt);el('pRate').textContent=String(o.rate).replace('.',',')+'%';el('pMonths').textContent=dur(o.months);
+  el('pIncome').textContent=rub(o.income);el('pIns').textContent=rub(o.ins);
+  {const k=B.paidExtra>0?saveB/B.paidExtra:0;
+  el('effect').innerHTML=`<div class="kpi"><div class="k">Внесёте сверху за всё время</div><div class="v">${rub(B.paidExtra)}</div></div>
+    <div class="kpi"><div class="k">Сэкономите</div><div class="v" style="color:var(--mint)">${rub(saveB)}</div></div>
+    <div class="kpi"><div class="k">Каждый рубль доплаты экономит</div><div class="v" style="color:var(--yellow)">${k.toFixed(2).replace('.',',')} ₽</div></div>
+    <div class="kpi"><div class="k">Последний платёж</div><div class="v">${monthName(B.months)}</div></div>`}
+  el('mini').innerHTML=`<div><span>Платите в месяц</span><b>${rub(A.P0+o.extra)}</b></div><div><span>Экономия, сокращаю срок</span><b style="color:var(--mint)">${rub(saveB)}</b></div><div><span>Закроется раньше на</span><b>${has?dur(fasterB):'0 мес.'}</b></div><div><span>Экономия, сокращаю платёж</span><b style="color:var(--lav-light)">${rub(saveC)}</b></div>`;
+  el('heroLbl').textContent=has?'Экономия, если сокращать срок':'Добавьте доплату, чтобы увидеть экономию';
+
+  const insRow=s=>o.ins>0?['Страховка за весь срок',rub(s.ins),'small']:null;
+  el('cards').innerHTML=
+    card('Без доплат','var(--base)','',[
+      ['Платёж в месяц',rub(A.P0)],['Переплата по процентам',rub(A.interest)],insRow(A),
+      ['Последний платёж через',dur(A.months),'small']])+
+    card('Сокращаю срок','var(--term)',has&&saveB>=saveC?'выгоднее':'',[
+      ['Платёж в месяц',rub(A.P0+o.extra)],['Переплата по процентам',rub(B.interest)],insRow(B),
+      ['Экономия',rub(saveB),'save'],['Последний платёж через',dur(B.months),'small']],has&&saveB>=saveC)+
+    card('Сокращаю платёж','var(--pay)',has?'легче':'',[
+      ['Платёж в месяц',`${rub(A.P0+o.extra)} → ${rub(C.lastPay+o.extra)}`,'small'],['Переплата по процентам',rub(C.interest)],insRow(C),
+      ['Экономия',rub(saveC),'save'],['Обязательный платёж к концу',rub(C.lastPay),'small']]);
+
+  drawChart(o.debt,o.months,[[A.bals,'var(--base)'],[C.bals,'var(--pay)'],[B.bals,'var(--term)',true]]);
+
+  const list=[...new Set([0,1000,3000,5000,10000,20000,o.extra].filter(v=>v>0||lumps.length))].sort((a,b)=>a-b);
+  window.calc.rows=list.map(e=>{const b=simulate(o.debt,o.rate,o.months,e,'term',lumps,o.ins),c=simulate(o.debt,o.rate,o.months,e,'pay',lumps,o.ins);
+    return {e,sB:A.total-b.total,fast:A.months-b.months,sC:A.total-c.total}});
+  el('tbody').innerHTML=window.calc.rows.map(r=>`<tr class="${r.e===o.extra?'cur':''}"><td>${r.e?rub(r.e):'только разовые'}</td><td class="m">${rub(r.sB)}</td><td>${dur(r.fast)}</td><td class="l">${rub(r.sC)}</td></tr>`).join('');
+
+  renderRefi(o,A);renderTax(o,A);renderTips(o,A,B,C,saveB,saveC,fasterB,has);renderTerms(o,A);updateBadges();
+}
+
+/* ===== рефинансирование ===== */
+function renderRefi(o,A){
+  const nr=parse(el('rfRate').value),cost=parse(el('rfCost').value);
+  if(!nr){el('rfKpis').innerHTML=`<div class="kpi wide"><div class="k">Сейчас</div><div class="v">${rub(A.P0)} в месяц под ${String(o.rate).replace('.',',')}%</div></div>`;
+    el('rfVerdict').innerHTML='<div class="verdict mid">Впишите новую ставку слева, и я посчитаю, окупится ли переход.</div>';window.calc.refi=null;return}
+  const N=simulate(o.debt,nr,o.months,0,'none',[],o.ins);
+  const dP=A.P0-N.P0,dI=A.interest-N.interest,net=dI-cost,pay=dP>0?Math.ceil(cost/dP):Infinity;
+  window.calc.refi={nr,cost,P:N.P0,dP,dI,net,pay};
+  el('rfKpis').innerHTML=`<div class="kpi"><div class="k">Новый платёж</div><div class="v">${rub(N.P0)}</div></div>
+    <div class="kpi"><div class="k">Разница в месяц</div><div class="v" style="color:${dP>0?'var(--mint)':'var(--coral)'}">${dP>0?'−':'+'}${rub(Math.abs(dP))}</div></div>
+    <div class="kpi"><div class="k">Экономия процентов за срок</div><div class="v">${rub(dI)}</div></div>
+    <div class="kpi"><div class="k">Чистая выгода с учётом расходов</div><div class="v" style="color:${net>0?'var(--mint)':'var(--coral)'}">${rub(net)}</div></div>`;
+  let v;
+  if(dP<=0)v=['bad',`Новая ставка не ниже текущей, переходить смысла нет.`];
+  else if(pay<=12)v=['good',`Окупится за ${dur(pay)}. Хороший вариант: за весь срок останется ${rub(net)} в кармане. Спросите у нового банка, сохраняется ли ставка без страховки жизни и нет ли ограничений на досрочку.`];
+  else if(pay<=36)v=['mid',`Окупится за ${dur(pay)}. Выгода есть, но не сразу. Имеет смысл, если не планируете продавать квартиру или закрывать ипотеку в ближайшие ${Math.ceil(pay/12)} года.`];
+  else v=['bad',`Расходы окупятся только через ${dur(pay)}. Разница в ставке слишком маленькая, обычно переходить имеет смысл от 1,5-2 процентных пунктов.`];
+  if(window.contract&&window.contract.program&&dP>0)v[1]+=` У вас льготная программа «${esc(window.contract.program)}»: уточните, не потеряете ли её при переходе.`;
+  el('rfVerdict').innerHTML=`<div class="verdict ${v[0]}">${v[1]}</div>`;
+}
+
+/* ===== налоговый вычет ===== */
+function taxRate(yearIncome){return yearIncome>2400000?0.15:0.13}
+function renderTax(o,A){
+  const price=parse(el('txPrice').value),sal=parse(el('txSalary').value),paid=parse(el('txPaid').value);
+  const used=el('txUsed').checked,old=el('txOld').checked;const yr=sal*12,rt=taxRate(yr);
+  const buy=used?0:Math.min(price,2000000)*rt;
+  const intBase=paid+A.interest,intLim=old?intBase:Math.min(intBase,3000000);const intR=intLim*rt;
+  const ndfl=yr*rt;const years=ndfl>0?Math.ceil(buy/ndfl):0;
+  window.calc.tax={buy,intR,ndfl,years,rt};
+  el('txKpis').innerHTML=`<div class="kpi"><div class="k">За покупку</div><div class="v" style="color:var(--mint)">${rub(buy)}</div></div>
+    <div class="kpi"><div class="k">За проценты, весь срок</div><div class="v" style="color:var(--mint)">${rub(intR)}</div></div>
+    <div class="kpi"><div class="k">Можно вернуть в год</div><div class="v">${ndfl?rub(ndfl):'впишите зарплату'}</div></div>
+    <div class="kpi"><div class="k">Вычет за покупку займёт</div><div class="v">${!buy?'0':ndfl?years+' '+plural(years,'год','года','лет'):'?'}</div></div>
+    <div class="kpi wide"><div class="k">Итого вернёт налоговая</div><div class="v" style="font-size:26px;color:var(--yellow)">${rub(buy+intR)}</div></div>`;
+  el('txToLump').disabled=!(buy>0&&ndfl>0);
+}
+el('txToLump').onclick=()=>{const t=window.calc.tax;if(!t||!t.buy||!t.ndfl)return;
+  lumps=lumps.filter(l=>l.note!=='возврат вычета');let left=t.buy,y=0;
+  while(left>1&&y<10){const a=Math.min(left,t.ndfl);lumps.push({a:Math.round(a),m:6+12*y,note:'возврат вычета'});left-=a;y++}
+  renderLumps();render();showTab('overview')};
+
+/* ===== особые условия ===== */
+function renderTerms(o,A){const c=window.contract;if(!c){el('termsGrid').innerHTML='';return}
+  const t=[];
+  if(+c.rate_increase_pp>0){const up=simulate(o.debt,o.rate+ +c.rate_increase_pp,o.months,0,'none',[],o.ins);
+    t.push(['var(--coral)','Рост ставки',`+${String(c.rate_increase_pp).replace('.',',')} п.п.${c.rate_increase_condition?', если '+esc(c.rate_increase_condition):''}`,`Платёж станет ${rub(up.P0)} вместо ${rub(A.P0)}, переплата вырастет на ${rub(up.interest-A.interest)}, это около ${rub((up.interest-A.interest)/Math.max(1,o.months/12))} в год.`])}
+  if(c.rent_restrictions)t.push(['var(--pink)','Сдача в аренду','Нужно согласие банка',esc(c.rent_restrictions)+' Без письменного согласия банк вправе потребовать вернуть кредит досрочно.']);
+  if(c.property_notes)t.push(['var(--peach)','Объект','Особенности участка или жилья',esc(c.property_notes)]);
+  if(c.tranches)t.push(['var(--lav-mid)','Выдача частями','Кредитная линия',esc(c.tranches)]);
+  if(c.insurance)t.push(['var(--lav-mid)','Страховка',c.insurance_cost_year?rub(+c.insurance_cost_year)+' в год':'Обязательная',esc(c.insurance)+(c.rate_if_no_insurance?' Без страховки: '+esc(c.rate_if_no_insurance):'')]);
+  if(c.early_repayment)t.push(['var(--mint)','Досрочка','Условия погашения',esc(c.early_repayment)]);
+  if(c.rate_change)t.push(['var(--peach)','Изменение ставки','Когда банк может поменять',esc(c.rate_change)]);
+  if(c.penalties)t.push(['var(--coral)','Просрочка','Неустойка',esc(c.penalties)]);
+  el('termsGrid').innerHTML=t.length?t.map(([col,k,b,p])=>`<div class="term" style="--c:${col}"><div class="k">${k}</div><b>${b}</b><p>${p}</p></div>`).join(''):'<p class="sub">Особых условий в документах не нашлось.</p>';
+}
+/* ===== вкладки ===== */
+const TABS={overview:['Обзор','Главные цифры, доплата и три сценария'],early:['Досрочки','Разовые досрочки и сравнение разных доплат'],refi:['Рефинансирование','Стоит ли переходить в другой банк под новую ставку'],
+  tax:['Налоговый вычет','Сколько вернёт налоговая за покупку и проценты'],docs:['Документы','Загрузите договор и график платежей, ИИ выпишет условия'],
+  terms:['Сроки и условия','Сроки обязательств, рост ставки, аренда и рискованные пункты'],tips:['Советы','Рекомендации по вашим цифрам, консультация ИИ и отчёт PDF']};
+function showTab(name){if(!TABS[name])name='overview';
+  document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===name?'true':'false'));
+  document.querySelectorAll('.view').forEach(v=>v.hidden=v.id!=='v-'+name);
+  el('vTitle').textContent=TABS[name][0];el('crumb').textContent=TABS[name][0];el('vSub').textContent=TABS[name][1];
+  try{history.replaceState(null,'','#'+name)}catch(e){}
+  window.scrollTo({top:0,behavior:'smooth'});
+  const a=document.querySelector(`.tab[data-tab="${name}"]`);if(a&&a.scrollIntoView&&innerWidth<=900)a.scrollIntoView({inline:'center',block:'nearest'});
+}
+function badge(id,text,cls){const b=el(id);if(!text){b.hidden=true;return}b.hidden=false;b.textContent=text;b.className='badge'+(cls?' '+cls:'')}
+const kk=v=>v>=1e6?(Math.round(v/1e5)/10+'').replace('.',',')+' млн':Math.round(v/1000)+'к';
+function updateBadges(){const c=window.contract,cl=window.calc||{};
+  badge('b-early',lumps.length?String(lumps.length):'');
+  const r=cl.refi;badge('b-refi',r?(r.net>0&&r.pay<=36?'выгодно':'нет'):'',r?(r.net>0&&r.pay<=36?'ok':''):'');
+  const t=cl.tax;badge('b-tax',t&&t.buy+t.intR>0?kk(t.buy+t.intR):'');
+  badge('b-docs',c?'✓':'',c?'ok':'');
+  const D=deadlineList(c).filter(x=>x.left>=0);
+  if(D.length){const d=D[0];const m=Math.floor(d.left/30.4);badge('b-terms',m>=1?m+' мес':d.left+' дн',d.left<=365?'hot':'warm')}
+  else badge('b-terms',c&&Array.isArray(c.red_flags)&&c.red_flags.length?String(c.red_flags.length):'',c?'warm':'');
+  badge('b-tips',cl.tips?String(cl.tips.length):'');
+}
+/* ===== советы ===== */
+function renderTips(o,A,B,C,saveB,saveC,fasterB,has){
+  const tips=[];const c=window.contract;
+  deadlineList(c).filter(x=>x.left>=0).slice(0,2).forEach(x=>tips.push([x.left<=365?'bad':'warn',`До ${new Date(x.date).toLocaleDateString('ru-RU')} осталось ${leftText(x.left)}`,`${esc(x.what)}.${x.penalty?' Если не успеть: '+esc(x.penalty)+'.':''} Начните собирать документы заранее: оценка, регистрация и полис обычно занимают 1-2 месяца.`]));
+  if(c&&+c.rate_increase_pp>0){const up=simulate(o.debt,o.rate+ +c.rate_increase_pp,o.months,0,'none',[],o.ins);
+    tips.push(['warn',`Ставка вырастет на ${String(c.rate_increase_pp).replace('.',',')} п.п., если ${esc(c.rate_increase_condition||'потерять условие банка')}`,`Тогда платёж станет ${rub(up.P0)} вместо ${rub(A.P0)}, а переплата вырастет на ${rub(up.interest-A.interest)}. Держите это условие, если оно стоит меньше этой разницы: ${rub((up.interest-A.interest)/Math.max(1,o.months/12))} в год.`])}
+  if(c&&c.rent_restrictions)tips.push(['rent','Сдача квартиры в аренду: есть ограничения',`По договору: ${esc(c.rent_restrictions)} Если планируете сдавать, сначала получите письменное согласие банка, иначе банк вправе потребовать досрочного возврата всего кредита.`]);
+  if(has){
+    tips.push(['ok','Сокращать срок выгоднее на '+rub(saveB-saveC),
+      `С вашими доплатами ипотека закроется на ${dur(fasterB)} раньше, а банку и страховой уйдёт на ${rub(saveB)} меньше. При сокращении платежа экономия ${rub(saveC)}: деньги быстрее возвращаются в семейный бюджет, зато банк получает больше.`]);
+    const k=B.paidExtra>0?saveB/B.paidExtra:0;
+    tips.push(['info','Каждый рубль доплаты экономит '+k.toFixed(2).replace('.',',')+' ₽',
+      `Всего вы доплатите сверху ${rub(B.paidExtra)}, а сэкономите ${rub(saveB)}. Ранние доплаты работают сильнее всего: в начале срока почти весь платёж уходит на проценты.`]);
+  }else tips.push(['info','Попробуйте доплату','Поставьте хотя бы 1 000 ₽ ползунком слева и посмотрите, как меняется переплата.']);
+  if(o.income>0){
+    const pct=Math.round(A.P0/o.income*100),pctX=Math.round((A.P0+o.extra)/o.income*100);
+    if(pctX<=30)tips.push(['ok',`На ипотеку уходит ${pctX}% дохода`,'Это комфортная нагрузка. Можно спокойно доплачивать и сокращать срок, если отложена подушка на 3-6 месяцев расходов.']);
+    else if(pctX<=45)tips.push(['warn',`На ипотеку уходит ${pctX}% дохода`,`Нагрузка заметная (без доплаты ${pct}%). Перед досрочкой убедитесь, что есть запас денег хотя бы на 3 месяца платежей.`]);
+    else tips.push(['bad',`На ипотеку уходит ${pctX}% дохода`,`Это много (без доплаты ${pct}%). Здесь разумнее сокращать платёж: он будет снижаться, и бюджету станет легче. Или сначала соберите подушку.`]);
+  }
+  if(o.ins>0)tips.push(['info',`Страховка обойдётся примерно в ${rub(A.ins)} за весь срок`,'Каждый год сравнивайте цену у разных страховых: банк обязан принять полис аккредитованной компании, а разница бывает 30-50%. Отказ от страхования жизни обычно повышает ставку, посчитайте, что дешевле.']);
+  const t=window.calc.tax;if(t&&t.buy+t.intR>0)tips.push(['ok',`Налоговая может вернуть до ${rub(t.buy+t.intR)}`,'Подать можно за последние три года. Возврат за покупку удобно сразу внести досрочкой, кнопка есть в блоке «Налоговый вычет».']);
+  if(o.rate>0&&o.rate<=7)tips.push(['info','Ставка низкая, проверьте вклад',`При ставке ${String(o.rate).replace('.',',')}% досрочка экономит меньше. Если банк по вкладу даёт заметно больше, может оказаться выгоднее копить.`]);
+  tips.push(['info','Как оформить досрочку',(c&&c.early_repayment?`По вашему договору: ${esc(c.early_repayment)} `:'')+'Подайте заявку в приложении банка до даты платежа и выберите «сократить срок» или «сократить платёж». Без заявки деньги просто лежат на счёте.']);
+  el('tips').innerHTML=tips.map(([c,t,p])=>`<div class="tip ${c}"><b>${t}</b><p>${p}</p></div>`).join('');
+  window.calc.tips=tips;
+}
+
+/* ===== документы: чтение файлов и разбор ИИ ===== */
+window.contract=null;let sampleFn=null,ctl=null,consultText='';
+function status(t,err){const s=el('cStatus');s.className='status'+(err?' err':'');s.innerHTML=t}
+function loadScript(src){return new Promise((ok,bad)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=()=>bad(new Error('script'));document.head.appendChild(s)})}
+const PDFJS='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
+async function ensurePdf(){if(window.pdfjsLib)return;await loadScript(PDFJS+'pdf.worker.min.js');await loadScript(PDFJS+'pdf.min.js')}
+async function ensureMammoth(){if(window.mammoth)return;await loadScript('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js')}
+
+async function pdfToTextAndImages(file,maxImg){
+  await ensurePdf();
+  const doc=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;
+  let text='';const n=Math.min(doc.numPages,60);
+  for(let i=1;i<=n;i++){const pg=await doc.getPage(i);const tc=await pg.getTextContent();text+=tc.items.map(t=>t.str).join(' ')+'\n'}
+  const images=[];
+  if(text.replace(/\s/g,'').length<800&&maxImg>0){
+    for(let i=1;i<=Math.min(doc.numPages,Math.max(0,maxImg));i++){
+      status(`Файл похож на скан, готовлю страницу ${i}<span class="dots"></span>`);
+      const pg=await doc.getPage(i);const vp=pg.getViewport({scale:1.6});const cv=document.createElement('canvas');
+      cv.width=vp.width;cv.height=vp.height;await pg.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise;
+      images.push(await new Promise(r=>cv.toBlob(r,'image/jpeg',.85)));
+    }
+  }
+  return {text,images};
+}
+
+function extractPrompt(){const today=new Date().toISOString().slice(0,10);return `Ты разбираешь документы по ипотеке из России: кредитный договор и, возможно, график платежей. Сегодня ${today}.
+Не выписывай персональные данные: ФИО, паспорт, адреса, номера счетов, СНИЛС. Только условия.
+Ответь только JSON такого вида (если чего-то нет в документах, ставь null):
+{"loan_kind":"тип: ипотека на готовое жильё, ипотека на новостройку, кредитная линия на ИЖС (стройка частями) и т.п.","credit_limit":"лимит кредитной линии числом или null","bank":"название банка","contract_date":"ГГГГ-ММ-ДД","loan_amount":число,"property_price":"стоимость жилья числом","rate":число процентов годовых,"term_months":число,"payment_type":"аннуитетный" или "дифференцированный","monthly_payment":число,"program":"льготная программа или null","insurance":"какие страховки обязательны, коротко","insurance_cost_year":число рублей в год или null,"rate_if_no_insurance":"на сколько вырастет ставка без страховки","rate_increase_pp":"на сколько процентных пунктов банк поднимет ставку при потере условия (страховка, пакет услуг, льгота), числом или null","rate_increase_condition":"при каком условии ставка растёт, коротко","tranches":"порядок выдачи частями: проценты лимита, условия, срок выборки. null если кредит выдан сразу","deadlines":[{"date":"ГГГГ-ММ-ДД","what":"что нужно сделать к этой дате: достроить дом, зарегистрировать ипотеку, предоставить оценку, полис, выбрать транши и т.п.","penalty":"что будет при нарушении: неустойка, рост ставки, коротко"}],"property_notes":"особенности объекта, влияющие на стройку или использование: водоохранная зона, приаэродромная территория, обременения. null если нет","early_repayment":"условия досрочки: минимум, за сколько дней уведомлять, комиссии, ограничения","rent_restrictions":"что договор или закладная говорит про сдачу жилья в аренду, передачу третьим лицам, регистрацию жильцов: нужно ли согласие банка, последствия. null если ничего","rate_change":"когда банк может изменить ставку","penalties":"неустойка за просрочку","schedule_balance":"из графика платежей: остаток основного долга на ближайшую к сегодняшней дате строку, числом, или null если графика нет","schedule_balance_date":"ГГГГ-ММ-ДД этой строки","schedule_months_left":"сколько платежей в графике осталось после этой даты, числом","red_flags":[{"title":"коротко, что насторожило","detail":"1-2 предложения простым языком, со ссылкой на пункт договора если есть"}]}
+В deadlines положи все сроки обязательств заёмщика из договора (если срок задан как «N месяцев от даты», посчитай дату). Если таких сроков нет, пустой массив. Документов может быть несколько: кредитный договор, поручительство, договор купли-продажи, график. Сведи условия из всех. В red_flags положи 2-5 пунктов, на которые заёмщику стоит обратить внимание (ограничения досрочки и аренды, рост ставки, обязательные страховки, комиссии, условия льготы). Пиши по-русски, просто, без длинных тире.`}
+
+function factsHtml(c){
+  const d=v=>v?new Date(v).toLocaleDateString('ru-RU'):null,n=v=>v&&+v?rub(+v):null;
+  const f=[['Тип кредита',c.loan_kind],['Банк',c.bank],['Лимит линии',n(c.credit_limit)],['Дата договора',d(c.contract_date)],['Сумма кредита',n(c.loan_amount)],['Стоимость жилья',n(c.property_price)],
+    ['Ставка',c.rate!=null?String(c.rate).replace('.',',')+'%':null],['Срок',c.term_months?dur(c.term_months):null],['Платёж',n(c.monthly_payment)],
+    ['Остаток по графику',c.schedule_balance?n(c.schedule_balance)+(c.schedule_balance_date?' на '+d(c.schedule_balance_date):''):null,1],
+    ['Осталось платежей',c.schedule_months_left?c.schedule_months_left:null,1],
+    ['Тип платежа',c.payment_type],['Программа',c.program],['Страховка',c.insurance],['Страховка в год',n(c.insurance_cost_year)],
+    ['Без страховки',c.rate_if_no_insurance],['Рост ставки',c.rate_increase_pp?`+${String(c.rate_increase_pp).replace('.',',')} п.п.${c.rate_increase_condition?': '+c.rate_increase_condition:''}`:null,1],['Выдача частями',c.tranches],['Объект',c.property_notes,1],['Досрочка',c.early_repayment],['Сдача в аренду',c.rent_restrictions,1],
+    ['Изменение ставки',c.rate_change],['Просрочка',c.penalties]];
+  return f.filter(x=>x[1]).map(([k,v,hl])=>`<div class="fact${hl?' hl':''}"><div class="k">${k}</div><div class="v">${esc(v)}</div></div>`).join('');
+}
+function daysLeft(d){const t=new Date(d);if(isNaN(t))return null;const now=new Date();now.setHours(0,0,0,0);return Math.round((t-now)/864e5)}
+function deadlineList(c){return (Array.isArray(c&&c.deadlines)?c.deadlines:[]).filter(x=>x&&x.date&&x.what).map(x=>({...x,left:daysLeft(x.date)})).filter(x=>x.left!=null).sort((a,b)=>a.left-b.left)}
+function leftText(d){if(d<0)return 'прошло';const m=Math.floor(d/30.4);return m>=2?m+' '+plural(m,'месяц','месяца','месяцев'):d+' '+plural(d,'день','дня','дней')}
+function renderDeadlines(c){const L=deadlineList(c);
+  el('deadlines').innerHTML=L.length?`<div style="font-weight:600;margin-bottom:2px">Сроки по договору</div>`+L.map(x=>{const cls=x.left<0?'past':x.left<=90?'hot':x.left<=365?'warm':'calm';
+    return `<div class="dl ${cls}"><div class="cd">${x.left<0?'срок':leftText(x.left)}<small>${x.left<0?'прошёл':'осталось'}</small></div><div><b>${new Date(x.date).toLocaleDateString('ru-RU')}: ${esc(x.what)}</b>${x.penalty?`<p>Если не успеть: ${esc(x.penalty)}</p>`:''}</div></div>`}).join(''):''}
+function showContract(){const c=window.contract;
+  el('termsEmpty').hidden=!!c;el('termsFull').hidden=!c;
+  if(!c){el('cResult').hidden=true;el('cUpload').hidden=false;return}
+  el('facts').innerHTML=factsHtml(c);renderDeadlines(c);
+  const fl=Array.isArray(c.red_flags)?c.red_flags:[];
+  el('flags').innerHTML=fl.length?`<div style="font-weight:600;margin-bottom:2px">На что обратить внимание</div>`+fl.map(x=>`<div class="flag"><b>${esc(x.title)}</b><p>${esc(x.detail)}</p></div>`).join(''):'';
+  el('cResult').hidden=false;el('cUpload').hidden=true;
+}
+
+async function handleFiles(files){
+  files=[...files];if(!files.length||!sampleFn)return;
+  el('consult').hidden=true;consultText='';
+  try{
+    const lim=await sampleFn.limits().catch(()=>({}));const maxImg=lim.images?Math.min(lim.images.maxCount,10):0;const maxTotal=maxImg?30:0;
+    let text='',images=[];
+    for(const f of files){
+      status(`Читаю «${esc(f.name)}»<span class="dots"></span>`);
+      text+=`\n\n=== ФАЙЛ: ${f.name} ===\n`;
+      if(/\.pdf$/i.test(f.name)||f.type==='application/pdf'){const r=await pdfToTextAndImages(f,maxTotal-images.length);text+=r.text;images.push(...r.images)}
+      else if(/\.docx$/i.test(f.name)){await ensureMammoth();const r=await mammoth.extractRawText({arrayBuffer:await f.arrayBuffer()});text+=r.value}
+      else if(f.type.startsWith('image/')){if(!maxImg){status('Фото в этом окне отправить нельзя, загрузите PDF или Word.',true);return}if(images.length<maxTotal)images.push(f)}
+    }
+    if(text.replace(/=== ФАЙЛ:[^\n]*/g,'').replace(/\s/g,'').length<200&&!images.length){status('Не получилось достать текст из файлов. Попробуйте PDF с текстом или фото страниц.',true);return}
+    const docText=text.slice(0,180000);const batches=[];
+    for(let i=0;i<Math.max(images.length,1);i+=Math.max(maxImg,1))batches.push(images.slice(i,i+maxImg));
+    let data=null;
+    for(let b=0;b<batches.length;b++){
+      status(batches.length>1?`ИИ читает документы, часть ${b+1} из ${batches.length}. Обычно это 20-60 секунд на часть<span class="dots"></span>`:'ИИ читает документы и выписывает условия. Обычно это 20-60 секунд<span class="dots"></span>');
+      let pr=extractPrompt()+(b===0&&docText.replace(/=== ФАЙЛ:[^\n]*/g,'').trim()?'\n\nДОКУМЕНТЫ:'+docText:'');
+      if(batches[b].length)pr+=`\n\nНа приложенных фото страницы документов${batches.length>1?` (часть ${b+1} из ${batches.length})`:''}.`;
+      if(data)pr+='\n\nЧТО УЖЕ НАЙДЕНО НА ДРУГИХ СТРАНИЦАХ (дополни и уточни, ничего не теряй, верни полный JSON):\n'+JSON.stringify(data);
+      data=await sampleFn.json(pr,batches[b].length?{images:batches[b]}:{});
+    }
+    if(!data||typeof data!=='object'){status('ИИ не смог разобрать документы. Попробуйте другой файл.',true);return}
+    window.contract=data;store(CKEY,data);showContract();render();
+    status('Готово. Проверьте цифры и подставьте их в калькулятор. Сроки и особые условия во вкладке «Сроки и условия».');
+  }catch(e){status(errText(e),true)}
+}
+function errText(e){const c=e&&e.code;
+  if(c==='not_granted'||c==='sampling_disabled'){hideAI();return 'Доступ к ИИ не разрешён для этой страницы.'}
+  if(c==='rate_limited')return 'Слишком много запросов подряд. Подождите пару минут и попробуйте снова.';
+  if(c==='session_expired')return 'Нужно заново войти в Claude.';
+  if(c==='prompt_too_large')return 'Документы слишком большие. Загрузите только основные страницы.';
+  if(c==='image_rejected')return 'Фото не подошло: нужен JPG или PNG поменьше.';
+  if(c==='invalid_json')return 'ИИ ответил не в том формате. Нажмите ещё раз.';
+  if(c==='cancelled')return 'Остановлено.';
+  if(e&&e.message==='script')return 'Не загрузился модуль чтения файлов. Проверьте интернет и попробуйте снова.';
+  return 'Что-то пошло не так. Попробуйте ещё раз.'}
+function hideAI(){el('cUpload').hidden=true;el('cUnavailable').hidden=false;
+  el('cUnavailable').textContent='Это демо: ниже пример того, что ИИ выписывает из договора за минуту. В рабочей версии сюда загружают договор и график платежей клиента, PDF, Word или фото страниц.';
+  el('resetBtn').hidden=true;el('consultBtn').hidden=true;el('aiBar').querySelector('p').innerHTML='<b>Персональная консультация.</b> Ниже пример: так ИИ разбирает цифры и договор клиента. В рабочей версии она пишется заново по кнопке.';showContract()}
+
+function applyContract(){
+  const c=window.contract;if(!c)return;
+  const S=+c.loan_amount,rate=+c.rate,N=+c.term_months;let msg;
+  if(rate)el('rate').value=String(rate).replace('.',',');
+  if(+c.schedule_balance&&+c.schedule_months_left){
+    el('debt').value=nf.format(Math.round(+c.schedule_balance));el('months').value=Math.round(+c.schedule_months_left);
+    msg='Цифры подставлены из графика платежей, это самый точный вариант.';
+  }else if(S&&rate&&N){
+    let left=N,bal=S;
+    if(c.contract_date){const d=new Date(c.contract_date),now=new Date();
+      const k=Math.max(0,(now.getFullYear()-d.getFullYear())*12+now.getMonth()-d.getMonth());
+      const r=rate/1200,P=annuity(S,r,N),kk=Math.min(k,N-1);
+      bal=r?S*Math.pow(1+r,kk)-P*(Math.pow(1+r,kk)-1)/r:S-P*kk;left=N-kk}
+    el('debt').value=nf.format(Math.round(bal));el('months').value=left;
+    msg='Остаток посчитан по договору без учёта досрочек. Для точности загрузите график платежей или впишите остаток из приложения банка.';
+  }else{status('В документах не нашлась сумма, ставка или срок. Впишите их вручную.',true);return}
+  if(+c.insurance_cost_year)el('ins').value=nf.format(+c.insurance_cost_year);
+  if(+c.property_price)el('txPrice').value=nf.format(+c.property_price);
+  if(c.contract_date&&new Date(c.contract_date).getFullYear()<2014)el('txOld').checked=true;
+  render();status(msg);showTab('overview');
+}
+
+function md(t){
+  const lines=esc(t).split('\n');let h='',inList=false;
+  const inline=s=>s.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  for(const raw of lines){const l=raw.trim();
+    if(/^[-*•]\s+/.test(l)){if(!inList){h+='<ul>';inList=true}h+='<li>'+inline(l.replace(/^[-*•]\s+/,''))+'</li>';continue}
+    if(inList){h+='</ul>';inList=false}
+    if(/^#{1,4}\s+/.test(l))h+='<h3>'+inline(l.replace(/^#+\s+/,''))+'</h3>';
+    else if(l)h+='<p>'+inline(l)+'</p>'}
+  if(inList)h+='</ul>';return h}
+
+async function consult(){
+  if(!sampleFn||!window.calc)return;const {o,A,B,C,saveB,saveC,fasterB,rows,refi,tax}=window.calc;
+  const rws=rows.map(r=>`доплата ${r.e}: срок экономия ${Math.round(r.sB)} руб, раньше на ${r.fast} мес; платёж экономия ${Math.round(r.sC)} руб`).join('\n');
+  const lp=lumps.length?lumps.map(l=>`${Math.round(l.a)} руб через ${l.m} мес${l.note?' ('+l.note+')':''}`).join('; '):'нет';
+  const prompt=`Ты опытный ипотечный консультант в России. Дай персональную консультацию человеку по его ипотеке.
+
+УСЛОВИЯ ИЗ ДОКУМЕНТОВ (JSON):
+${JSON.stringify(window.contract||{},null,1)}
+
+РАСЧЁТ ИЗ КАЛЬКУЛЯТОРА:
+Остаток долга ${Math.round(o.debt)} руб, ставка ${o.rate}%, осталось ${o.months} мес, платёж ${Math.round(A.P0)} руб.
+Доход семьи ${Math.round(o.income)} руб в месяц, платёж это ${o.income?Math.round(A.P0/o.income*100):'?'}% дохода.
+Страховка ${Math.round(o.ins)} руб в год, за весь срок около ${Math.round(A.ins)} руб.
+Без доплат переплата процентами ${Math.round(A.interest)} руб.
+Ежемесячная доплата ${Math.round(o.extra)} руб, разовые досрочки: ${lp}.
+Сокращение срока: проценты ${Math.round(B.interest)}, экономия с учётом страховки ${Math.round(saveB)}, раньше на ${fasterB} мес.
+Сокращение платежа: проценты ${Math.round(C.interest)}, экономия ${Math.round(saveC)}, обязательный платёж к концу ${Math.round(C.lastPay)} руб.
+Разные доплаты:
+${rws}
+Рефинансирование: ${refi?`новая ставка ${refi.nr}%, расходы ${Math.round(refi.cost)}, платёж станет ${Math.round(refi.P)}, чистая выгода ${Math.round(refi.net)}, окупится за ${isFinite(refi.pay)?refi.pay+' мес':'никогда'}`:'не считали'}.
+Налоговый вычет по расчёту: за покупку ${Math.round(tax.buy)}, за проценты ${Math.round(tax.intR)}, в год можно вернуть до ${Math.round(tax.ndfl)}.
+
+Напиши консультацию по-русски в Markdown с такими разделами (заголовки через ###):
+### Главное про вашу ипотеку
+### Что выгоднее именно вам
+### На что смотреть в договоре
+### Сдача в аренду
+### Рефинансирование и вычет
+### План на ближайший месяц
+Требования: опирайся на цифры выше, называй конкретные суммы. В разделе про договор учти условия досрочки, страховки и льготу: если досрочка или рефинансирование может лишить льготы или повысить ставку, скажи прямо. Если в deadlines есть сроки, начни раздел про договор с них: сколько осталось от сегодняшней даты и что будет при опоздании. Если ставка зависит от пакета или страховки (rate_increase_pp), посчитай, сколько стоит потеря условия. Учитывай тип кредита: у кредитной линии на ИЖС долг растёт по мере выдачи траншей, вычет за участок и стройку доступен только после регистрации дома. Раздел «Сдача в аренду» пиши, только если в rent_restrictions есть ограничения: что нужно сделать, чтобы сдавать законно. Если ограничений нет или документов нет, этот раздел пропусти. План: 3-4 конкретных шага. Объём до 500 слов.
+Стиль: как пишет знакомый, который разбирается: просто, конкретно, с цифрами. Не используй длинное тире, ставь точку, запятую или двоеточие. Не используй конструкции «не X, а Y», канцелярит и фразы «важно отметить», «ключевой», «является», «в заключение». Без эмодзи и без морали в конце. Если в документах чего-то не хватает для вывода, так и скажи.`;
+  const box=el('consult');box.hidden=false;box.innerHTML='<p class="status">Готовлю консультацию по вашим цифрам. Это может занять до минуты<span class="dots"></span></p>';
+  el('consultBtn').disabled=true;el('stopBtn').hidden=false;ctl=new AbortController();
+  try{const {text,truncated}=await sampleFn(prompt,{signal:ctl.signal,cache:false,onText:({text})=>{box.innerHTML=md(text)}});
+    consultText=text;box.innerHTML=md(text)+(truncated?'<p class="status">Ответ обрезан, нажмите кнопку ещё раз.</p>':'');
+  }catch(e){if(e.text)consultText=e.text;box.innerHTML=(e.text?md(e.text):'')+`<p class="status err">${errText(e)}</p>`}
+  finally{el('consultBtn').disabled=false;el('stopBtn').hidden=true}
+}
+
+/* ===== PDF-отчёт ===== */
+let downloadsApi=null;
+function reportHtml(){
+  const {o,A,B,C,saveB,saveC,fasterB,rows,refi,tax,tips}=window.calc;const c=window.contract;
+  const strip=s=>String(s).replace(/<[^>]+>/g,'');
+  let h=`<div class="sec"><h1>Ипотечный консультант</h1><div class="muted">Персональный расчёт от ${new Date().toLocaleDateString('ru-RU')}</div></div>
+  <div class="sec"><h2>Исходные данные</h2><div class="grid3">
+    <div class="cell">Остаток долга<b>${rub(o.debt)}</b></div><div class="cell">Ставка<b>${String(o.rate).replace('.',',')}%</b></div><div class="cell">Осталось<b>${dur(o.months)}</b></div>
+    <div class="cell">Платёж<b>${rub(A.P0)}</b></div><div class="cell">Доход семьи<b>${rub(o.income)}</b></div><div class="cell">Доплата в месяц<b>${rub(o.extra)}</b></div></div>
+    ${lumps.length?`<p style="margin-top:8px">Разовые досрочки: ${lumps.map(l=>`${rub(l.a)} в ${monthName(l.m)}${l.note?' ('+esc(l.note)+')':''}`).join('; ')}</p>`:''}</div>
+  <div class="sec"><h2>Три сценария</h2><div class="muted">Экономия при сокращении срока</div><div class="big">${rub(saveB)}</div>
+    <table><tr><th></th><th>Без доплат</th><th>Сокращаю срок</th><th>Сокращаю платёж</th></tr>
+    <tr><td>Проценты</td><td>${rub(A.interest)}</td><td>${rub(B.interest)}</td><td>${rub(C.interest)}</td></tr>
+    ${o.ins>0?`<tr><td>Страховка</td><td>${rub(A.ins)}</td><td>${rub(B.ins)}</td><td>${rub(C.ins)}</td></tr>`:''}
+    <tr><td>Экономия</td><td>0 ₽</td><td>${rub(saveB)}</td><td>${rub(saveC)}</td></tr>
+    <tr><td>Срок</td><td>${dur(A.months)}</td><td>${dur(B.months)}</td><td>${dur(C.months)}</td></tr></table></div>
+  <div class="sec"><h2>Разные доплаты</h2><table><tr><th>Доплата</th><th>Срок: экономия</th><th>Раньше на</th><th>Платёж: экономия</th></tr>
+    ${rows.map(r=>`<tr><td>${r.e?rub(r.e):'только разовые'}</td><td>${rub(r.sB)}</td><td>${dur(r.fast)}</td><td>${rub(r.sC)}</td></tr>`).join('')}</table></div>`;
+  if(refi)h+=`<div class="sec"><h2>Рефинансирование</h2><p>Под ${String(refi.nr).replace('.',',')}% платёж будет ${rub(refi.P)}, разница ${rub(refi.dP)} в месяц. Расходы ${rub(refi.cost)}, окупятся за ${isFinite(refi.pay)?dur(refi.pay):'никогда'}. Чистая выгода за срок ${rub(refi.net)}.</p></div>`;
+  if(tax.buy+tax.intR>0)h+=`<div class="sec"><h2>Налоговый вычет</h2><p>За покупку до ${rub(tax.buy)}, за проценты до ${rub(tax.intR)}. В год можно вернуть до ${rub(tax.ndfl)}.</p></div>`;
+  if(c){h+=`<div class="sec"><h2>Условия по документам</h2><table>${[['Тип кредита',c.loan_kind],['Банк',c.bank],['Ставка',c.rate?c.rate+'%':null],['Рост ставки',c.rate_increase_pp?'+'+c.rate_increase_pp+' п.п. '+(c.rate_increase_condition||''):null],['Выдача частями',c.tranches],['Объект',c.property_notes],['Программа',c.program],['Страховка',c.insurance],['Досрочка',c.early_repayment],['Аренда',c.rent_restrictions],['Изменение ставки',c.rate_change],['Просрочка',c.penalties]].filter(x=>x[1]).map(([k,v])=>`<tr><th style="text-align:left;width:150px">${k}</th><td style="text-align:left">${esc(v)}</td></tr>`).join('')}</table></div>`;
+    const DL=deadlineList(c);if(DL.length)h+=`<div class="sec"><h2>Сроки по договору</h2>${DL.map(x=>`<div class="flagr"><b>${new Date(x.date).toLocaleDateString('ru-RU')} (${x.left<0?'срок прошёл':'осталось '+leftText(x.left)})</b><br>${esc(x.what)}${x.penalty?'. Если не успеть: '+esc(x.penalty):''}</div>`).join('')}</div>`;
+    if(Array.isArray(c.red_flags)&&c.red_flags.length)h+=`<div class="sec"><h2>На что обратить внимание</h2>${c.red_flags.map(f=>`<div class="flagr"><b>${esc(f.title)}</b><br>${esc(f.detail)}</div>`).join('')}</div>`}
+  if(consultText)h+=`<div class="sec"><h2>Персональная консультация</h2>${md(consultText)}</div>`;
+  else h+=`<div class="sec"><h2>Рекомендации</h2>${tips.map(t=>`<p><b>${strip(t[1])}.</b> ${strip(t[2])}</p>`).join('')}</div>`;
+  h+=`<div class="sec muted" style="font-size:11px">Расчёт носит информационный характер и не является финансовой рекомендацией. Банк может округлять суммы иначе.</div>`;
+  return h;
+}
+async function makePdf(){
+  const st=el('pdfStatus');st.className='status';st.innerHTML='Собираю отчёт<span class="dots"></span>';el('pdfBtn').disabled=true;
+  try{
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js').catch(()=>{throw new Error('script')});
+    if(!window.jspdf)await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+    const rep=el('report');rep.innerHTML=reportHtml();await document.fonts.ready;
+    const pdf=new jspdf.jsPDF({unit:'mm',format:'a4'});const PW=210,PH=297,M=8;let y=M,first=true;
+    for(const sec of rep.children){
+      const cv=await html2canvas(sec,{scale:2,backgroundColor:'#ffffff',logging:false});
+      const hmm=cv.height*PW/cv.width;
+      if(hmm<=PH-2*M){if(y+hmm>PH-M&&!first){pdf.addPage();y=M}
+        pdf.addImage(cv.toDataURL('image/jpeg',.92),'JPEG',0,y,PW,hmm);y+=hmm}
+      else{ // длинный блок режем по страницам
+        const pxPage=(PH-2*M)*cv.width/PW;let off=0;
+        if(y>M){pdf.addPage();y=M}
+        while(off<cv.height){const part=Math.min(pxPage,cv.height-off);const pc=document.createElement('canvas');pc.width=cv.width;pc.height=part;
+          pc.getContext('2d').drawImage(cv,0,off,cv.width,part,0,0,cv.width,part);const ph=part*PW/cv.width;
+          pdf.addImage(pc.toDataURL('image/jpeg',.92),'JPEG',0,y,PW,ph);off+=part;y+=ph;if(off<cv.height){pdf.addPage();y=M}}
+      }
+      first=false;
+    }
+    rep.innerHTML='';
+    const blob=pdf.output('blob'),fname='Ипотека расчёт и консультация (демо).pdf';
+    if(downloadsApi)await downloadsApi.save({filename:fname,data:blob});
+    else{const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download=fname;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),5000)}
+    st.textContent='Отчёт сохранён.';
+  }catch(e){const c=e&&e.code;st.className='status err';
+    st.textContent=c==='declined'?'Сохранение отменено.':c==='rate_limited'?'Окно сохранения уже открыто, проверьте его.':e&&e.message==='script'?'Не загрузился модуль PDF. Проверьте интернет.':'Не получилось сохранить отчёт. Попробуйте ещё раз.'}
+  finally{el('pdfBtn').disabled=false}
+}
+
+/* ===== запуск ===== */
+const saved=fetchStore(KEY)||DEFAULTS;
+ids.forEach(i=>{el(i).value=saved[i]??DEFAULTS[i];fmtInput(i);
+  el(i).addEventListener('input',render);el(i).addEventListener('blur',()=>fmtInput(i))});
+const sx=fetchStore(XKEY);if(sx){Object.assign(extraState,sx);lumps=Array.isArray(sx.lumps)?sx.lumps:[]}
+['rfRate','rfCost','txPrice','txSalary','txPaid'].forEach(i=>{el(i).value=extraState[i]||'';
+  el(i).addEventListener('input',render);el(i).addEventListener('blur',()=>{if(el(i).value)fmtInput(i)})});
+if(!el('txSalary').value)el('txSalary').value=nf.format(saved.income||DEFAULTS.income);
+if(!el('txPrice').value)el('txPrice').value=nf.format(Math.round((saved.debt||DEFAULTS.debt)*1.25));
+el('txUsed').checked=!!extraState.txUsed;el('txOld').checked=!!extraState.txOld;
+['txUsed','txOld'].forEach(i=>el(i).addEventListener('change',render));
+el('extraRange').addEventListener('input',e=>{el('extra').value=nf.format(+e.target.value);render()});
+el('extraRange2').addEventListener('input',e=>{el('extra').value=nf.format(+e.target.value);render()});
+el('chips').innerHTML=[0,1000,3000,5000,10000,20000].map(v=>`<button type="button" data-v="${v}">${v?'+'+nf.format(v):'0'}</button>`).join('');
+el('chips').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;el('extra').value=nf.format(+b.dataset.v);render()});
+window.contract=fetchStore(CKEY)||DEMO_CONTRACT;consultText=DEMO_CONSULT;el('consult').hidden=false;el('consult').innerHTML=md(DEMO_CONSULT);
+renderLumps();showContract();render();
+
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.tab)));
+document.querySelector('.nav').addEventListener('keydown',e=>{if(!['ArrowDown','ArrowUp','ArrowRight','ArrowLeft'].includes(e.key))return;
+  const L=[...document.querySelectorAll('.tab')];const i=L.indexOf(document.activeElement);if(i<0)return;e.preventDefault();
+  const n=L[(i+(e.key==='ArrowDown'||e.key==='ArrowRight'?1:L.length-1))%L.length];n.focus();showTab(n.dataset.tab)});
+document.addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(g)showTab(g.dataset.go)});
+el('editBtn').onclick=()=>{const open=el('editBox').hidden;el('editBox').hidden=!open;el('editBtn').setAttribute('aria-expanded',String(open));el('editBtn').textContent=open?'Свернуть':'Изменить данные';if(open)el('debt').focus()};
+el('docsJump').onclick=()=>showTab('docs');el('toTerms').onclick=()=>showTab('terms');
+showTab((location.hash||'').slice(1)||'overview');
+
+(function initAI(){
+  const drop=el('drop'),file=el('file');
+  file.addEventListener('change',()=>{handleFiles(file.files);file.value=''});
+  drop.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();file.click()}});
+  ['dragenter','dragover'].forEach(t=>drop.addEventListener(t,e=>{e.preventDefault();drop.classList.add('over')}));
+  ['dragleave','drop'].forEach(t=>drop.addEventListener(t,e=>{e.preventDefault();drop.classList.remove('over')}));
+  drop.addEventListener('drop',e=>handleFiles(e.dataTransfer.files));
+  el('applyBtn').onclick=applyContract;el('consultBtn').onclick=consult;el('stopBtn').onclick=()=>ctl&&ctl.abort();
+  el('resetBtn').onclick=()=>{window.contract=null;consultText='';try{localStorage.removeItem(CKEY)}catch(e){}el('consult').hidden=true;status('');showContract();render()};
+  el('pdfBtn').onclick=makePdf;
+  el('clearBtn').onclick=()=>{el('clearBtn').hidden=true;el('clearConfirm').hidden=false;el('clearNo').focus()};
+  el('clearNo').onclick=()=>{el('clearConfirm').hidden=true;el('clearBtn').hidden=false};
+  el('clearYes').onclick=()=>{try{[KEY,XKEY,CKEY].forEach(k=>localStorage.removeItem(k))}catch(e){}location.reload();return;
+    try{[KEY,XKEY,CKEY].forEach(k=>localStorage.removeItem(k))}catch(e){}
+    ids.forEach(i=>{el(i).value=DEFAULTS[i];fmtInput(i)});
+    ['rfRate','txPaid'].forEach(i=>el(i).value='');el('rfCost').value='30 000';
+    el('txSalary').value=nf.format(DEFAULTS.income);el('txPrice').value=nf.format(Math.round(DEFAULTS.debt*1.25));
+    el('txUsed').checked=false;el('txOld').checked=false;lumps=[];renderLumps();
+    window.contract=null;consultText='';el('consult').hidden=true;el('consult').innerHTML='';status('');el('pdfStatus').textContent='';
+    showContract();render();el('clearConfirm').hidden=true;el('clearBtn').hidden=false;
+    status('Всё очищено. Можно вписать новые цифры или загрузить документы.');
+    showTab('docs')};
+  const w=window.claude;
+  if(!w||!w.use){hideAI();return}
+  w.use('sample').then(s=>{if(!s){hideAI();return}sampleFn=s;
+    s.limits().then(l=>{if(!l.images)el('file').accept='.pdf,.docx'}).catch(()=>{})}).catch(hideAI);
+  w.use('downloads').then(d=>{downloadsApi=d}).catch(()=>{});
+})();
+</script>
+
+</body>
+</html>
